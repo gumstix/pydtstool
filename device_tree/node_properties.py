@@ -29,6 +29,9 @@ class BaseNodeProperty(object):
         else:
             return '\t'
 
+    def print(self, indent):
+        raise NotImplementedError
+
 
 class BoolNodeProperty(BaseNodeProperty):
     def __str__(self):
@@ -79,7 +82,7 @@ class TupleNodeProperty(PairNodePorperty):
     property_value: typing.Tuple
 
     def __init__(self, name, value):
-        super(TupleNodeProperty, self).__init__(name)
+        super(TupleNodeProperty, self).__init__(name, value)
         self.property_value = value
 
     def __str__(self):
@@ -153,6 +156,7 @@ class StrListNodeProperty(ListNodeProperty):
         for v in self.property_value[:-1]:
             ret_str += (self.tab * indent) + '"{}",\n'.format(v)
         ret_str += (self.tab * indent) + '"{}";'.format(self.property_value[-1])
+        return ret_str
 
 
 def new_node_property(name, value=None, default_type=bool) -> BaseNodeProperty:

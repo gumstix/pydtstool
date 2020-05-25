@@ -39,7 +39,7 @@ class BaseNode(object):
             if ref.strip() == '':
                 raise NodeSignatureError('Blank-string signature detected')
         if nodename is None and handle is not None:
-            raise NodeSignatureError('Handle {} not associated with nodename')
+            raise NodeSignatureError('Handle {} not associated with nodename'.format(handle))
 
     def __str__(self):
         raise NotImplementedError('BaseNode cannot be printed')
@@ -66,9 +66,14 @@ class Node(BaseNode):
         self.handle = handle
         self.ref = ref
         self._properties = [new_node_property('status', 'okay')]
-        self.reg = reg
-        if reg is not None:
-            self._properties.append(new_node_property('reg', reg))
+        try:
+            self.reg = int(reg, 16)
+        except TypeError as e:
+            self.reg = reg
+        except ValueError as e:
+            self.reg = reg
+        if self.reg is not None:
+            self._properties.append(new_node_property('reg', self.reg))
         self.parent = parent
         if parent is not None:
             parent.children.append(self)
@@ -99,11 +104,13 @@ class Node(BaseNode):
             if self.handle is not None:
                 sig += self.handle + ': '
             sig += self.nodename
-            if self.reg is not None:
+            if isinstance(self.reg, int):
                 sig += '@' + hex(self.reg)[2:]
+            elif self.reg is not None:
+                sig += '@' + self.reg
         return sig
 
-    def set_property(self, name, value=True):
+    def set_property(self, name, value=None):
         if name not in self.property_index.keys():
             self._properties.append(new_node_property(name, value))
         else:
@@ -135,15 +142,20 @@ class Node(BaseNode):
             raise ValueError('data type does not match variable')
 
     def __str__(self):
-        nodestr = self.signature + ' {\n'
-        for p in self.properties:
-            nodestr += p.print(1) + '\n'
-        nodestr += '};'
-        return nodestr
+        return self.print()
 
     def print(self, indent=0):
-        nodestr = (self.tab * indent) + self.signature + ' {\n'
+        nodestr = ''
+        for i in self.dtc['include']:
+            nodestr += (self.tab * indent) + '/include/ "{}";\n'.format(i)
+            if self.dtc['include'].index(i) == len(self.dtc['include']) - 1:
+                nodestr += '\n'
+        nodestr += (self.tab * indent) + self.signature + ' {\n'
         indent += 1
+        for key, value in self.dtc.items():
+            if key != 'include' and len(value) > 0:
+                for v in value:
+                    nodestr += (self.tab * indent) + '/{}/ {};\n'.format(key, v)
         for p in self.properties:
             nodestr += p.print(indent) + '\n'
         for c in self.children:
