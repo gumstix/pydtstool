@@ -129,6 +129,7 @@ class TupleListNodeProperty(ListNodeProperty):
 class IntListNodeProperty(ListNodeProperty):
     property_value: typing.List[int]
 
+    # noinspection PyTypeChecker
     def __str__(self):
         return '{} = < {} >;'.format(self.property_name, ' '.join(self.property_value))
 

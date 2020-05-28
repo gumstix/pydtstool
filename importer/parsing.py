@@ -1,20 +1,15 @@
 import re
 import typing
-from collections import namedtuple
 
+from common import sig_tuple
 
-gcc_match = re.compile(r'(?=\s*)((?P<inc>#include[\ \t]*)([\"<])|'
+gcc_match = re.compile(r'(?=\s*)((?P<inc>#include[ \t]*)([\"<])|'
                        r'(?P<def>#define))'
                        r'(\s*(?P<val>[^\v]*))')
 
 node_match = re.compile(r'(((?P<sig>(?!\s)[&/]?[\w\-_: \t@,]*)[^&]{)|'
                         r'(?P<end>};))'
                         r'(?P<extra>[^\v]*)?')
-
-sig_match = re.compile(r'(?P<ref>(?<=&)[\w_]*)|'
-                       r'(((?P<handle>[\w_]*(?=:))?(:\s*)?'
-                       r'(?P<nodename>(?<!@)[\w_\-\/]+)).?'
-                       r'(?P<reg>(?<=@)\S*)?)')
 
 comment_match = re.compile(r'^([ \t]*(?=\S))?'
                            r'((?P<head>((?<!//))?(?(4)|.*(?=//|/\*)))'
@@ -24,15 +19,13 @@ comment_match = re.compile(r'^([ \t]*(?=\S))?'
                            r'(?P<blockend>\*/))?'
                            r'(?P<tail>[^\v]*)')
 
-line_match = re.compile(r'(\/(?P<dtc>(?<=\/)[\w\-]*)\/|'
+line_match = re.compile(r'(/(?P<dtc>(?<=/)[\w\-]*)/|'
                         r'(?P<head>[,\w_\-]*)\s*'
                         r'(?P<eq>=))'
-                        r'((?P<tail>.*))|'
+                        r'(?P<tail>.*)|'
                         r'(^(?P<bool>\S*(?=;)))')
 
 prop_match = re.compile(r'((\"(?P<str>[^\"\v]*)\")|(<(?P<tup>[^>]*)>)|(?P<macro>__\w*__))(?P<comma>,)?')
-
-sig_tuple = (namedtuple('sig_tuple', ['nodename', 'handle', 'ref', 'reg']))
 
 
 def remove_comments(data) -> typing.List[str]:
@@ -43,7 +36,8 @@ def remove_comments(data) -> typing.List[str]:
         if groups is None:
             valid = block_comment
         else:
-            valid = next((True for n, m in groups.groupdict().items() if n in ['comment', 'block', 'blockend'] and m is not None), block_comment)
+            valid = next((True for n, m in groups.groupdict().items() if n in ['comment', 'block', 'blockend'] and
+                          m is not None), block_comment)
         if valid:
             if groups is not None:
                 indent = groups.group(1)
@@ -116,7 +110,6 @@ def collect_subnodes(data: typing.List[str]):
 
 def parse_property(prop_val: str):
     temp_val = prop_val.strip()
-    ret_val = None
     temp_list = []
     gd = {'comma': ''}
     while gd['comma'] is not None:
@@ -127,9 +120,10 @@ def parse_property(prop_val: str):
             if gd['comma'] is not None:
                 temp_val = temp_val[len(groups.group(1)):].lstrip(' ,')
         else:
+            # noinspection PyTypeChecker
             gd['comma'] = None
     if len(temp_list) > 1:
-        ret_val =[]
+        ret_val = []
         for item in temp_list:
             groups = prop_match.search(item)
             if groups is not None:
@@ -150,13 +144,23 @@ def parse_property(prop_val: str):
     return ret_val
 
 
-def make_sig_tuple(signature):
-    groups = sig_match.search(signature)
-    if groups is None:
-        raise ValueError('Signature "{}" not valid'.format(signature))
-    sig_dict = groups.groupdict()
-    sig = sig_tuple(sig_dict.get('nodename', None),
-                    sig_dict.get('handle', None),
-                    sig_dict.get('ref', None),
-                    sig_dict.get('reg', None))
-    return sig
+
+
+def merge_dict(d1, d2):
+    merged = {}
+    for key in d1.keys():
+        if key in d2.keys():
+            if isinstance(d1[key], dict):
+                merged[key] = merge_dict(d1[key], d2[key])
+            elif isinstance(d1[key], list):
+                merged[key] = d1[key] + d2[key]
+            elif isinstance(d1[key], str):
+                merged[key] = '{} | {}'.format(d1[key], d2[key])
+            else:
+                merged[key] = d2[key]
+        else:
+            merged[key] = d1[key]
+    for key in d2.keys():
+        if key not in d1.keys():
+            merged[key] = d2[key]
+    return merged

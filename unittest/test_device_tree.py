@@ -1,9 +1,11 @@
 import unittest
-from device_tree import DeviceTree
+
+from device_tree.device_tree import DeviceTree
 
 filename = 'new.dts'
 
 
+# noinspection PyUnusedLocal
 class TestDeviceTree(unittest.TestCase):
     def test_generate(self):
         dt = DeviceTree()
@@ -15,12 +17,12 @@ class TestDeviceTree(unittest.TestCase):
         self.assertIsInstance(dt, DeviceTree)
         self.assertEqual(dt.filename, filename)
 
+    # noinspection PyArgumentList
     def test_new_device_tree_fails(self):
         bad_values = [None, '', 1, [], {}]
         try:
             dt = DeviceTree.new_devicetree()
             self.fail('Generated without filename')
-            return
         except Exception as e:
             self.assertIsInstance(e, TypeError)
         for value in bad_values:

@@ -1,4 +1,5 @@
 from typing import Union, List, Dict
+
 from .node_properties import new_node_property, BaseNodeProperty
 
 
@@ -68,9 +69,9 @@ class Node(BaseNode):
         self._properties = [new_node_property('status', 'okay')]
         try:
             self.reg = int(reg, 16)
-        except TypeError as e:
+        except TypeError:
             self.reg = reg
-        except ValueError as e:
+        except ValueError:
             self.reg = reg
         if self.reg is not None:
             self._properties.append(new_node_property('reg', self.reg))
@@ -86,7 +87,6 @@ class Node(BaseNode):
         self.parent = parent
         parent.children.append(self)
 
-
     @property
     def property_index(self):
         return {p.property_name: p for p in self._properties}
@@ -97,7 +97,7 @@ class Node(BaseNode):
 
     @property
     def signature(self):
-        sig  = ''
+        sig = ''
         if self.ref is not None:
             sig += '&' + self.ref
         else:
@@ -107,7 +107,7 @@ class Node(BaseNode):
             if isinstance(self.reg, int):
                 sig += '@' + hex(self.reg)[2:]
             elif self.reg is not None:
-                sig += '@' + self.reg
+                sig += '@' + str(self.reg)
         return sig
 
     def set_property(self, name, value=None):

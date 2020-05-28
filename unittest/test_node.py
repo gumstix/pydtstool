@@ -1,8 +1,10 @@
 import unittest
-from device_tree import Node, NodeSignatureError
+
+from device_tree.node import Node, NodeSignatureError
 from device_tree.node_properties import *
 
 
+# noinspection PyUnusedLocal
 class TestNode(unittest.TestCase):
     dummy_node = Node(nodename='dummy')
 
@@ -45,6 +47,7 @@ class TestNode(unittest.TestCase):
         self.assertEqual(n.parent, self.dummy_node)
         self.all_node_properties(n)
 
+    # noinspection PyUnusedLocal
     def test_generate_fails_signature(self):
         with self.assertRaises(NodeSignatureError):
             n = Node()

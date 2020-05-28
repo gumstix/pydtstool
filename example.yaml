@@ -1,0 +1,34 @@
+gcc_include:
+  - example.dtsi
+  - <example2.dtsi>
+gcc_define:
+  PIN_OUTPUT_LOW: otput-low
+  IS_TRUE: True
+dts_version: 1
+nodes:
+  0:
+    nodename: /
+    status: okay
+    properties:
+      model: Model name of this device
+    children:
+      0:
+        signature: 'handle: nodename@0'
+        status: disabled
+        dtc_include: another.dtsi
+        dtc_delete_node: next-node
+        properties:
+          compatible:
+            - is,compatible
+            - also,compatible
+        children:
+          0:
+            nodename: next-node
+            status: okay
+
+  1:
+    ref: handle
+    status: okay
+    properties:
+      property: value
+

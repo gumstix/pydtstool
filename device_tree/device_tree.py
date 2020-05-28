@@ -1,6 +1,7 @@
-from typing import Dict, List, Union, Any
+from typing import Dict, List, Union
+
+from importer.parsing import sig_tuple
 from .node import Node
-from importer import sig_tuple
 
 default_header = ['/*************************************/',
                   '/* PyDeviceTree by Gumstix           */',
@@ -10,7 +11,7 @@ default_header = ['/*************************************/',
 
 
 class DeviceTree(object):
-    filename:   str
+    filename: str
     dts_version: int
     gcc_include: List[str]
     gcc_define: Dict[str, Union[bool, str, int]]
@@ -27,7 +28,10 @@ class DeviceTree(object):
         text = '\n'.join(default_header)
         text += '\n/dts-v{}/;\n\n'.format(self.dts_version)
         for inc in self.gcc_include:
-            text += '#include {}\n'.format(inc)
+            if inc.startswith('<'):
+                text += '#include {}\n'.format(inc)
+            else:
+                text += '#include "{}"\n'.format(inc)
         text += '\n'
         for name, val in self.gcc_define.items():
             text += '#define {}'.format(name)
@@ -41,7 +45,6 @@ class DeviceTree(object):
         for _, node in self.nodes_by_ref.items():
             text += node.print(0) + '\n'
         return text
-
 
     @classmethod
     def new_devicetree(cls,
@@ -60,7 +63,7 @@ class DeviceTree(object):
                 name = n.nodename
                 if n.reg is not None:
                     name += '@' + str(n.reg)
-            nodes[name] = n
+                nodes[name] = n
         return nodes
 
     @property
@@ -69,7 +72,6 @@ class DeviceTree(object):
         return nodes
 
     def get_node_from_tuple(self, tup: sig_tuple) -> Union[Node, None]:
-        # candidates = None
         node = None
         if tup.nodename is not None:
             candidates = [n for k, n in self.nodes_by_name.items() if k.startswith(tup.nodename)]
@@ -96,5 +98,3 @@ class DeviceTree(object):
         entry_number = max(self._all_nodes.keys()) + 1
         self._all_nodes[entry_number] = node
         return entry_number
-
-

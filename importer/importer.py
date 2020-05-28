@@ -1,25 +1,23 @@
-from device_tree import DeviceTree
-from .parsing import (gcc_match,
+import os
+import typing
+
+from device_tree.device_tree import DeviceTree
+from .parsing import (merge_dict,
+                      gcc_match,
                       node_match,
                       line_match,
-                      make_sig_tuple,
                       remove_comments,
                       collect_subnodes,
                       parse_property)
-from .building import merge_dict
-
-import typing
-import os
-import re
 
 
 class DtImporter(object):
-    dt: DeviceTree
     filename: str
     _data: typing.List[str]
     dt_version: int
 
     def __init__(self, filename):
+        self.nodestrs = {}
         self.filename = filename
         self.dt_version = 1
         self.dt = DeviceTree.new_devicetree(filename)
@@ -45,7 +43,6 @@ class DtImporter(object):
     def extract_nodes(self):
         data = self._data.copy()
         i = 0
-        self.nodestrs={}
         datalen = len(data)
         while datalen and i < datalen:
             line = data[i]
@@ -67,7 +64,7 @@ class DtImporter(object):
             else:
                 i += 1
 
-    def parse(self, comments: bool=False):
+    def parse(self, comments: bool = False):
         if not comments:
             data = remove_comments(self._data)
             if data != self._data:
@@ -104,8 +101,6 @@ class DtImporter(object):
                 _, child = self.dt.new_node(node, *sigtup)
             self.build_node(child, sub_lines)
 
-
-
     def build(self):
         for sig, nodelines in self.nodestrs.items():
             sigtup = make_sig_tuple(sig)
@@ -115,5 +110,5 @@ class DtImporter(object):
             self.build_node(node, nodelines)
 
     def export(self, filename):
-        with open (filename, 'w+') as fp:
+        with open(filename, 'w+') as fp:
             fp.write(str(self.dt))
