@@ -5,7 +5,7 @@ from common import sig_tuple
 
 gcc_match = re.compile(r'(?=\s*)((?P<inc>#include[ \t]*)([\"<])|'
                        r'(?P<def>#define))'
-                       r'(\s*(?P<val>[^\v]*))')
+                       r'(\s*(?P<val>[^\v\"]*))')
 
 node_match = re.compile(r'(((?P<sig>(?!\s)[&/]?[\w\-_: \t@,]*)[^&]{)|'
                         r'(?P<end>};))'

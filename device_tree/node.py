@@ -1,6 +1,6 @@
 from typing import Union, List, Dict
 
-from .node_properties import new_node_property, BaseNodeProperty
+from .node_properties import new_node_property, BaseNodeProperty, BoolNodeProperty
 
 
 class NodeSignatureError(Exception):
@@ -92,6 +92,11 @@ class Node(BaseNode):
         return {p.property_name: p for p in self._properties}
 
     @property
+    def property_map(self):
+        for p in self._properties:
+            yield p._get()
+
+    @property
     def properties(self):
         return self._properties
 
@@ -108,6 +113,14 @@ class Node(BaseNode):
                 sig += '@' + hex(self.reg)[2:]
             elif self.reg is not None:
                 sig += '@' + str(self.reg)
+        return sig
+
+    @property
+    def names(self):
+        sig = {'nodename': self.nodename,
+               'handle': self.handle,
+               'ref': self.ref,
+               'reg': self.reg}
         return sig
 
     def set_property(self, name, value=None):
@@ -145,9 +158,9 @@ class Node(BaseNode):
         return self.print()
 
     def print(self, indent=0):
-        nodestr = ''
+        nodestr = '\n'
         for i in self.dtc['include']:
-            nodestr += (self.tab * indent) + '/include/ "{}";\n'.format(i)
+            nodestr += (self.tab * indent) + '/include/ "{}"\n'.format(i)
             if self.dtc['include'].index(i) == len(self.dtc['include']) - 1:
                 nodestr += '\n'
         nodestr += (self.tab * indent) + self.signature + ' {\n'

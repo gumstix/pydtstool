@@ -38,12 +38,12 @@ class DeviceTree(object):
             if type(val) not in (bool, type(None)):
                 text += ' {}'.format(val)
             text += '\n'
-
+        text += '\n'
         root = self.nodes_by_name.get('/', None)
         if root is not None:
             text += root.print(1) + '\n'
         for _, node in self.nodes_by_ref.items():
-            text += node.print(0) + '\n'
+            text += '\n' + node.print(0) + '\n'
         return text
 
     @classmethod

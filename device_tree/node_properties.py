@@ -22,6 +22,9 @@ class BaseNodeProperty(object):
     def type_match(self, value):
         raise NotImplementedError('Base node has no type')
 
+    def _get(self):
+        raise NotImplementedError('No getter for Base property')
+
     @property
     def tab(self):
         if self.soft_tabs:
@@ -40,6 +43,9 @@ class BoolNodeProperty(BaseNodeProperty):
     def print(self, indent=0):
         return (self.tab * indent) + self.property_name + ';'
 
+    def _get(self):
+        return (self.property_name, True)
+
     def type_match(self, value):
         if isinstance(value, bool):
             return True
@@ -55,6 +61,9 @@ class PairNodePorperty(BaseNodeProperty):
 
     def __str__(self):
         raise NotImplementedError('Non-type property')
+
+    def _get(self):
+        return self.property_name, self.property_value
 
     def print(self, indent: int):
         return (self.tab * indent) + str(self)
@@ -100,6 +109,9 @@ class ListNodeProperty(BaseNodeProperty):
     def __str__(self):
         raise NotImplementedError('Untyped list property')
 
+    def _get(self):
+        return self.property_name, self.property_value
+
     def print(self, indent=0):
         return self.__str__()
 
@@ -131,7 +143,7 @@ class IntListNodeProperty(ListNodeProperty):
 
     # noinspection PyTypeChecker
     def __str__(self):
-        return '{} = < {} >;'.format(self.property_name, ' '.join(self.property_value))
+        return '{} = <{}>;'.format(self.property_name, ' '.join(self.property_value))
 
     def print(self, indent=0):
         return (self.tab * indent) + self.__str__()

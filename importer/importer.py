@@ -1,6 +1,6 @@
 import os
 import typing
-
+from common import make_sig_tuple
 from device_tree.device_tree import DeviceTree
 from .parsing import (merge_dict,
                       gcc_match,

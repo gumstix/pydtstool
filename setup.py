@@ -5,6 +5,6 @@ setup(name='PyDeviceTree',
       license='GPLv3',
       author_email='keith.lee@gumstix.com',
       description='Manipulate device trees as abstract data type',
-      packages=find_packages(exclude=['unittest']),
+      packages=find_packages(exclude=['unittest', 'debug_lib']),
       long_description=open('README.md').read(),
       zip_safe=False)

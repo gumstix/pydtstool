@@ -2,7 +2,7 @@ gcc_include:
   - example.dtsi
   - <example2.dtsi>
 gcc_define:
-  PIN_OUTPUT_LOW: otput-low
+  PIN_OUTPUT_LOW: output-low
   IS_TRUE: True
 dts_version: 1
 nodes:
@@ -14,10 +14,11 @@ nodes:
     children:
       0:
         signature: 'handle: nodename@0'
-        status: disabled
         dtc_include: another.dtsi
         dtc_delete_node: next-node
         properties:
+          status: disabled
+          gpio: !!python/tuple ['&gpio', 0, 0]
           compatible:
             - is,compatible
             - also,compatible

@@ -45,9 +45,8 @@ class UnDictifier(object):
         dtnode.dtc['delete-property'] = node_data.get('dtc_delete_property', [])
         dtnode.dtc['delete-node'] = node_data.get('dtc_delete_node', [])
         for key, val in dtnode.dtc.items():
-            if not isinstance(val, list) and val is not None:
-               dtnode.dtc[key] = [val]
-        dtnode.set_property('status', node_data.get('status', 'okay'))
+            if isinstance(val, str):
+                dtnode.dtc[key] = [val]
         for prop_name, prop_val in node_data.get('properties', {}).items():
             dtnode.set_property(prop_name, prop_val)
         for _, child in node_data.get('children', {}).items():
