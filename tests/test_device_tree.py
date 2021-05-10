@@ -1,12 +1,18 @@
+###################################################
+#                    PyDeviceTree                 #
+#           Copyright 2021, Altium, Inc.          #
+#  Author: Keith Lee                              #
+#  E-Mail: keith.lee@altium.com                   #
+###################################################
 import unittest
 
-from device_tree.device_tree import DeviceTree
+from dtsgen import DeviceTree
+from tests import DtTestCase
 
 filename = 'new.dts'
 
 
-# noinspection PyUnusedLocal
-class TestDeviceTree(unittest.TestCase):
+class TestDeviceTree(DtTestCase):
     def test_generate(self):
         dt = DeviceTree()
         self.assertIsInstance(dt, DeviceTree)
@@ -17,7 +23,6 @@ class TestDeviceTree(unittest.TestCase):
         self.assertIsInstance(dt, DeviceTree)
         self.assertEqual(dt.filename, filename)
 
-    # noinspection PyArgumentList
     def test_new_device_tree_fails(self):
         bad_values = [None, '', 1, [], {}]
         try:
@@ -31,4 +36,3 @@ class TestDeviceTree(unittest.TestCase):
             except Exception as e:
                 self.assertIsInstance(e, TypeError)
                 continue
-

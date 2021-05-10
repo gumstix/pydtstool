@@ -1,8 +1,14 @@
+###################################################
+#                    PyDeviceTree                 #
+#           Copyright 2021, Altium, Inc.          #
+#  Author: Keith Lee                              #
+#  E-Mail: keith.lee@altium.com                   #
+###################################################
 from collections import namedtuple
 import re
 
 sig_match = re.compile(r'(?P<ref>(?<=&)[\w_]*)|'
-                       r'(((?P<handle>[\w_]*(?=:))?(:\s*)?'
+                       r'(((?P<handle>[\w_0-9]*(?=:))?(:\s*)?'
                        r'(?P<nodename>(?<!@)[\w_\-/]+)).?'
                        r'(?P<reg>(?<=@)\S*)?)')
 

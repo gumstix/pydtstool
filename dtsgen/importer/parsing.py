@@ -1,17 +1,24 @@
+###################################################
+#                    PyDeviceTree                 #
+#           Copyright 2021, Altium, Inc.          #
+#  Author: Keith Lee                              #
+#  E-Mail: keith.lee@altium.com                   #
+###################################################
 import re
 import typing
 
-from common import sig_tuple
+from ..common import sig_tuple
 
 gcc_match = re.compile(r'(?=\s*)((?P<inc>#include[ \t]*)([\"<])|'
                        r'(?P<def>#define))'
                        r'(\s*(?P<val>[^\v\"]*))')
 
-node_match = re.compile(r'(((?P<sig>(?!\s)[&/]?[\w\-_: \t@,]*)[^&]{)|'
+node_match = re.compile(r'(((?P<sig>[^\s][&/]?[\w\-_: \t@,]*)[^&]{)|'
                         r'(?P<end>};))'
                         r'(?P<extra>[^\v]*)?')
 
 comment_match = re.compile(r'^([ \t]*(?=\S))?'
+                           r'(?P<linker>#[^id][0-9]*\s*\")|'
                            r'((?P<head>((?<!//))?(?(4)|.*(?=//|/\*)))'
                            r'((?P<comment>//)|'
                            r'(?P<block>/\*)))?'
@@ -19,8 +26,8 @@ comment_match = re.compile(r'^([ \t]*(?=\S))?'
                            r'(?P<blockend>\*/))?'
                            r'(?P<tail>[^\v]*)')
 
-line_match = re.compile(r'(/(?P<dtc>(?<=/)[\w\-]*)/|'
-                        r'(?P<head>[,\w_\-]*)\s*'
+line_match = re.compile(r'^((/(?P<dtc>(?<=/)[\w\-]*)/|'
+                        r'(?P<head>[,\w_\-]*)\s*)'
                         r'(?P<eq>=))'
                         r'(?P<tail>.*)|'
                         r'(^(?P<bool>\S*(?=;)))')
@@ -35,6 +42,9 @@ def remove_comments(data) -> typing.List[str]:
         groups = comment_match.search(line)
         if groups is None:
             valid = block_comment
+        elif groups.group('linker') is not None:
+            data[i] = ''
+            continue
         else:
             valid = next((True for n, m in groups.groupdict().items() if n in ['comment', 'block', 'blockend'] and
                           m is not None), block_comment)

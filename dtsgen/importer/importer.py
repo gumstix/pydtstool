@@ -1,7 +1,13 @@
+###################################################
+#                    PyDeviceTree                 #
+#           Copyright 2021, Altium, Inc.          #
+#  Author: Keith Lee                              #
+#  E-Mail: keith.lee@altium.com                   #
+###################################################
 import os
 import typing
-from common import make_sig_tuple
-from device_tree.device_tree import DeviceTree
+from ..common import make_sig_tuple
+from dtsgen.device_tree import DeviceTree
 from .parsing import (merge_dict,
                       gcc_match,
                       node_match,
@@ -32,13 +38,17 @@ class DtImporter(object):
     def extract_gcc(self):
         for line in self._data:
             groups = gcc_match.search(line)
-            if groups is None:
-                continue
-            if groups.group('inc') is not None:
-                self.dt.gcc_include.append(groups.group('val'))
-            elif groups.group('def') is not None:
-                defn = groups.group('val').split()
-                self.dt.gcc_define[defn[0]] = ' '.join(defn[1:])
+            if groups is not None:
+                if groups.group('inc') is not None:
+                    self.dt.gcc_include.append(groups.group('val'))
+                elif groups.group('def') is not None:
+                    defn = groups.group('val').split()
+                    self.dt.gcc_define[defn[0]] = ' '.join(defn[1:])
+            groups = line_match.search(line)
+            if groups is not None and groups.group('dtc') is not None:
+                if groups.group('dtc') not in ['delete-node', 'delete-property']:
+                    self.dt.dtc_special[groups.group('dtc')] = groups.group('tail').strip()
+
 
     def extract_nodes(self):
         data = self._data.copy()
@@ -61,6 +71,8 @@ class DtImporter(object):
                     datalen = len(data)
                     i = 0
                     continue
+                else:
+                    i += 1
             else:
                 i += 1
 
@@ -74,9 +86,9 @@ class DtImporter(object):
 
     def build_node(self, node, lines):
         ag_line = ''
-        for line in lines['self']:
+        for line in lines.get('self', []):
             ag_line += line.strip()
-            if line.endswith(';'):
+            if not line.startswith('# ') and line.endswith(';'):
                 ag_line = ag_line[:-1]
                 groups = line_match.search(ag_line)
                 if groups is not None:
@@ -87,10 +99,10 @@ class DtImporter(object):
                         node.set_property(prop_name, prop_val)
                     elif gd.get('bool', None) is not None:
                         node.set_property(gd['bool'])
-                    elif gd.get('dtc', None) is not None:
+                    elif gd.get('dtc', None) is not None and gd['dtc'] in node.dtc.keys():
                         node.dtc[gd['dtc']].append(gd['tail'])
                 ag_line = ''
-        for sig, sub_lines in lines['subnodes'].items():
+        for sig, sub_lines in lines.get('subnodes', {}).items():
             sigtup = make_sig_tuple(sig)
             child = None
             for c in node.children:
@@ -108,6 +120,7 @@ class DtImporter(object):
             if node is None:
                 _, node = self.dt.new_node(None, *sigtup)
             self.build_node(node, nodelines)
+        return self.dt
 
     def export(self, filename):
         with open(filename, 'w+') as fp:

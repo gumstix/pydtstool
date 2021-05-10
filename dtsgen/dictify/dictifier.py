@@ -1,7 +1,13 @@
+###################################################
+#                    PyDeviceTree                 #
+#           Copyright 2021, Altium, Inc.          #
+#  Author: Keith Lee                              #
+#  E-Mail: keith.lee@altium.com                   #
+###################################################
 import os
 import yaml
-from device_tree import DeviceTree, Node
-from device_tree.node_properties import *
+from dtsgen import DeviceTree, Node
+from dtsgen.node_properties import *
 
 
 class Dictifier(object):

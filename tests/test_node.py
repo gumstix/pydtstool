@@ -1,11 +1,18 @@
+###################################################
+#                    PyDeviceTree                 #
+#           Copyright 2021, Altium, Inc.          #
+#  Author: Keith Lee                              #
+#  E-Mail: keith.lee@altium.com                   #
+###################################################
 import unittest
 
-from device_tree.node import Node, NodeSignatureError
-from device_tree.node_properties import *
+from dtsgen.node import Node, NodeSignatureError
+from dtsgen.node_properties import *
+from tests import DtTestCase
 
 
 # noinspection PyUnusedLocal
-class TestNode(unittest.TestCase):
+class TestNode(DtTestCase):
     dummy_node = Node(nodename='dummy')
 
     def all_node_properties(self, node):

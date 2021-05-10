@@ -1,4 +1,10 @@
-from typing import Union, List, Dict
+###################################################
+#                    PyDeviceTree                 #
+#           Copyright 2021, Altium, Inc.          #
+#  Author: Keith Lee                              #
+#  E-Mail: keith.lee@altium.com                   #
+###################################################
+from typing import Union, List, Dict, Any
 
 from .node_properties import new_node_property, BaseNodeProperty, BoolNodeProperty
 
@@ -47,26 +53,25 @@ class BaseNode(object):
 
 
 class Node(BaseNode):
-    handle: Union[str, None]
-    ref: Union[str, None]
-    _properties: List[BaseNodeProperty]
-    parent: BaseNode
-    reg: Union[int, None]
-    dtc: Dict[str, str]
-
     def __init__(self,
                  parent=None,
                  nodename=None,
                  handle=None,
                  ref=None,
                  reg=None):
+        self.handle = None
+        self.ref = None
+        self._properties = []
+        self.parent = None
+        self.reg = None
+        self.dtc = {}
+        self.children = []
         self._validate_signature(nodename, handle, ref)
         if parent is not None and not isinstance(parent, Node):
             raise TypeError('Bad parent: {}'.format(type(parent)))
         self.nodename = nodename
         self.handle = handle
         self.ref = ref
-        self._properties = [new_node_property('status', 'okay')]
         try:
             self.reg = int(reg, 16)
         except TypeError:
@@ -78,7 +83,6 @@ class Node(BaseNode):
         self.parent = parent
         if parent is not None:
             parent.children.append(self)
-        self.children = []
         self.dtc = {'include': [], 'delete-node': [], 'delete-property': []}
 
     def set_parent(self, parent):
@@ -122,6 +126,27 @@ class Node(BaseNode):
                'ref': self.ref,
                'reg': self.reg}
         return sig
+
+    @property
+    def pathname(self):
+        path = self.nodename
+        if self.reg is not None:
+            if isinstance(self.reg, int):
+                path += '@' + hex(self.reg)[2:]
+            else:
+                path += '@' + str(self.reg)
+        return path
+
+
+    @property
+    def path(self):
+        n = self
+        path = ''
+        while n is not None:
+            path = n.pathname + '/' + path
+            n = n.parent
+        path = path.replace(' ', '')
+        return path
 
     def set_property(self, name, value=None):
         if name not in self.property_index.keys():
@@ -176,3 +201,12 @@ class Node(BaseNode):
         indent -= 1
         nodestr += (self.tab * indent) + '};'
         return nodestr
+
+    def join(self, next_node):
+        for prop in next_node.properties:
+            self.set_property(prop.property_name, prop.property_value)
+        for child in next_node.children:
+            exists = next((c for c in self.children if c.signature == child.signature), None)
+            if exists is not None:
+                exists.join(child)
+

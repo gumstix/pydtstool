@@ -1,12 +1,18 @@
+###################################################
+#                    PyDeviceTree                 #
+#           Copyright 2021, Altium, Inc.          #
+#  Author: Keith Lee                              #
+#  E-Mail: keith.lee@altium.com                   #
+###################################################
 import typing
 
 
 def tuple_to_string(tup: typing.Tuple):
-    string = ' '
-    for t in tup:
-        string += '{} '.format(t)
+    # string = ' '
+    # for t in tup:
+    #     string += '{} '.format(t)
+    string = ' '.join(tup)
     return string
-
 
 class BaseNodeProperty(object):
     property_name: str
@@ -44,7 +50,7 @@ class BoolNodeProperty(BaseNodeProperty):
         return (self.tab * indent) + self.property_name + ';'
 
     def _get(self):
-        return (self.property_name, True)
+        return self.property_name, True
 
     def type_match(self, value):
         if isinstance(value, bool):
