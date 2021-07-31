@@ -1,5 +1,5 @@
 ###################################################
-#                    PyDeviceTree                 #
+#                    pyDtsTool                 #
 #           Copyright 2021, Altium, Inc.          #
 #  Author: Keith Lee                              #
 #  E-Mail: keith.lee@altium.com                   #
@@ -8,7 +8,7 @@
 import os
 
 the_copyright = ['###################################################\n',
-                 '#                    PyDeviceTree                 #\n',
+                 '#                    pyDtsTool                 #\n',
                  '#           Copyright 2021, Altium, Inc.          #\n',
                  '#  Author: Keith Lee                              #\n',
                  '#  E-Mail: keith.lee@altium.com                   #\n',

@@ -1,13 +1,13 @@
 ###################################################
-#                    PyDeviceTree                 #
+#                    pyDtsTool                 #
 #           Copyright 2021, Altium, Inc.          #
 #  Author: Keith Lee                              #
 #  E-Mail: keith.lee@altium.com                   #
 ###################################################
 import unittest
 
-from dtsgen.node import Node, NodeSignatureError
-from dtsgen.node_properties import *
+from pyDtsTool.node import Node, NodeSignatureError
+from pyDtsTool.node_properties import *
 from tests import DtTestCase
 
 
@@ -17,7 +17,7 @@ class TestNode(DtTestCase):
 
     def all_node_properties(self, node):
         for p in node.properties:
-            self.assertIsInstance(p, BaseNodeProperty)
+            self.assertIsInstance(p, NodeProperty)
 
     def test_simple_generate_nodename(self):
         n = Node(nodename='test')

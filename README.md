@@ -2,6 +2,6 @@
 *Author: Keith Lee*\
 *Contact: keith.lee@gumstix.com*
 
-# PyDeviceTree
+# PyDtsTool
 A Python3 library for interpreting, editing and exporting
 device tree data as an abstract data structure. **WIP**.

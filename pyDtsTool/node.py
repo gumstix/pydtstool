@@ -1,12 +1,12 @@
 ###################################################
-#                    PyDeviceTree                 #
+#                    pyDtsTool                    #
 #           Copyright 2021, Altium, Inc.          #
 #  Author: Keith Lee                              #
 #  E-Mail: keith.lee@altium.com                   #
 ###################################################
 from typing import Union, List, Dict, Any
 
-from .node_properties import new_node_property, BaseNodeProperty, BoolNodeProperty
+from .node_properties import new_node_property, NodeProperty, BoolNodeProperty
 
 
 class NodeSignatureError(Exception):
@@ -33,9 +33,9 @@ class BaseNode(object):
 
     @staticmethod
     def _validate_signature(nodename=None,
-                            handle=None,
+                            handles=[],
                             ref=None):
-        if nodename == handle == ref and ref is None:
+        if nodename == ref and ref is None and len(handles) == 0:
             raise NodeSignatureError('No signature provided')
         if nodename is not None and ref is not None:
             raise NodeSignatureError('Ambiguous signature: &{}, {}'.format(ref, nodename))
@@ -45,8 +45,8 @@ class BaseNode(object):
         if ref is not None:
             if ref.strip() == '':
                 raise NodeSignatureError('Blank-string signature detected')
-        if nodename is None and handle is not None:
-            raise NodeSignatureError('Handle {} not associated with nodename'.format(handle))
+        if nodename is None and len(handles) > 0:
+            raise NodeSignatureError('Handle {} not associated with nodename'.format(handles))
 
     def __str__(self):
         raise NotImplementedError('BaseNode cannot be printed')
@@ -56,22 +56,27 @@ class Node(BaseNode):
     def __init__(self,
                  parent=None,
                  nodename=None,
-                 handle=None,
+                 handles=[],
                  ref=None,
                  reg=None):
-        self.handle = None
+        self.handles = []
         self.ref = None
         self._properties = []
         self.parent = None
         self.reg = None
         self.dtc = {}
         self.children = []
-        self._validate_signature(nodename, handle, ref)
+        if handles != None:
+            if not isinstance(handles, list):
+                handles = [handles]
+        else:
+            handles = []
+        self._validate_signature(nodename, handles, ref)
         if parent is not None and not isinstance(parent, Node):
             raise TypeError('Bad parent: {}'.format(type(parent)))
         self.nodename = nodename
-        self.handle = handle
         self.ref = ref
+        self.handles = handles
         try:
             self.reg = int(reg, 16)
         except TypeError:
@@ -110,8 +115,8 @@ class Node(BaseNode):
         if self.ref is not None:
             sig += '&' + self.ref
         else:
-            if self.handle is not None:
-                sig += self.handle + ': '
+            if len(self.handles) > 0:
+                sig += ': '.join(self.handles) + ': '
             sig += self.nodename
             if isinstance(self.reg, int):
                 sig += '@' + hex(self.reg)[2:]
@@ -122,7 +127,7 @@ class Node(BaseNode):
     @property
     def names(self):
         sig = {'nodename': self.nodename,
-               'handle': self.handle,
+               'handles': self.handles,
                'ref': self.ref,
                'reg': self.reg}
         return sig
@@ -143,7 +148,11 @@ class Node(BaseNode):
         n = self
         path = ''
         while n is not None:
-            path = n.pathname + '/' + path
+            if n.pathname == None:
+                pathname = n.signature
+            else:
+                pathname = n.pathname
+            path = pathname + '/' + path
             n = n.parent
         path = path.replace(' ', '')
         return path
@@ -203,10 +212,14 @@ class Node(BaseNode):
         return nodestr
 
     def join(self, next_node):
+        if len(next_node.handles) > 0:
+            for h in next_node.handles:
+                if h not in self.handles:
+                    self.handles.append(h)
         for prop in next_node.properties:
             self.set_property(prop.property_name, prop.property_value)
         for child in next_node.children:
-            exists = next((c for c in self.children if c.signature == child.signature), None)
-            if exists is not None:
-                exists.join(child)
-
+            if child not in self.children:
+                self.children.append(child)
+                child.parent = self
+        next_node.children = []

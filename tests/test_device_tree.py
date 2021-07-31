@@ -1,12 +1,12 @@
 ###################################################
-#                    PyDeviceTree                 #
+#                    pyDtsTool                 #
 #           Copyright 2021, Altium, Inc.          #
 #  Author: Keith Lee                              #
 #  E-Mail: keith.lee@altium.com                   #
 ###################################################
 import unittest
 
-from dtsgen import DeviceTree
+from pyDtsTool import DeviceTree
 from tests import DtTestCase
 
 filename = 'new.dts'

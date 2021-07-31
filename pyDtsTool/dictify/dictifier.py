@@ -1,13 +1,13 @@
 ###################################################
-#                    PyDeviceTree                 #
+#                    pyDtsTool                 #
 #           Copyright 2021, Altium, Inc.          #
 #  Author: Keith Lee                              #
 #  E-Mail: keith.lee@altium.com                   #
 ###################################################
 import os
 import yaml
-from dtsgen import DeviceTree, Node
-from dtsgen.node_properties import *
+from pyDtsTool import DeviceTree, Node
+from pyDtsTool.node_properties import *
 
 
 class Dictifier(object):

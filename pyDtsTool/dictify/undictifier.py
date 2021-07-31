@@ -1,12 +1,12 @@
 ###################################################
-#                    PyDeviceTree                 #
+#                    pyDtsTool                 #
 #           Copyright 2021, Altium, Inc.          #
 #  Author: Keith Lee                              #
 #  E-Mail: keith.lee@altium.com                   #
 ###################################################
 import yaml
 import os
-from dtsgen import DeviceTree, Node
+from pyDtsTool import DeviceTree, Node
 from ..common import make_sig_tuple, sig_tuple
 
 

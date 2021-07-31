@@ -1,2 +1,4 @@
-graphviz
+networkx
+pygraphviz
 pyyaml
+pyvis

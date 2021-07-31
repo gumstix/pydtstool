@@ -1,5 +1,5 @@
 ###################################################
-#                    PyDeviceTree                 #
+#                    pyDtsTool                 #
 #           Copyright 2021, Altium, Inc.          #
 #  Author: Keith Lee                              #
 #  E-Mail: keith.lee@altium.com                   #
@@ -7,11 +7,11 @@
 from typing import Dict, List, Union
 from collections import defaultdict
 
-from dtsgen.common import sig_tuple
+from pyDtsTool.common import sig_tuple
 from .node import Node
 
 default_header = ['/*********************************************/',
-                  '/* PyDeviceTree by Altium                    */',
+                  '/* pyDtsTool by Altium                    */',
                   '/* Copyright (c) 2020 Altium, Inc            */',
                   '/* Contact: Keith Lee <keith.lee@altium.com> */',
                   '/*********************************************/',
@@ -94,20 +94,29 @@ class DeviceTree(object):
 
     @property
     def nodes_by_ref(self) -> Dict[str, Node]:
-        """
-        Dictify all nodes that are reference nodes
-        :return:
-        """
         nodes = {n.ref: n for _, n in self._all_nodes.items() if n.ref is not None}
         return nodes
 
-    def _node_indexes_by_refhandle(self) -> Dict[str, List[int]]:
+    def _node_indexes_by_path(self) -> Dict[str, List[int]]:
         nodes = defaultdict(list)
         for i, n in self._all_nodes.items():
-            if n.handle is not None:
-                nodes[n.handle].append(i)
-            if n.ref is not None:
+            if n.path != None:
+                nodes[n.path].append(i)
+        return dict(nodes)
+
+    def _node_indexes_by_ref(self) -> Dict[str, List[int]]:
+        nodes = defaultdict(list)
+        for i, n in self._all_nodes.items():
+            if n.ref != None:
                 nodes[n.ref].append(i)
+        return dict(nodes)
+
+    def _node_indexes_by_handle(self) -> Dict[str, List[int]]:
+        nodes = defaultdict(list)
+        for i, n in self._all_nodes.items():
+            if len(n.handles) > 0:
+                for h in n.handles:
+                    nodes[h].append(i)
         return dict(nodes)
 
     def get_node_from_tuple(self, tup: sig_tuple) -> Union[Node, None]:
@@ -123,11 +132,12 @@ class DeviceTree(object):
     def new_node(self,
                  parent=None,
                  nodename=None,
-                 handle=None,
+                 handles=[],
                  ref=None,
                  reg=None):
-
-        new_node = Node(parent, nodename, handle, ref, reg)
+        if isinstance(handles, str):
+            handles = handles.split(': ')
+        new_node = Node(parent, nodename, handles, ref, reg)
         entry_number = self.add_node(new_node)
         return entry_number, new_node
 
@@ -137,17 +147,32 @@ class DeviceTree(object):
         self._all_nodes[entry_number] = node
         return entry_number
 
-    def merge_by_handle(self):
-        to_merge = {tag: indexes for tag, indexes in self._node_indexes_by_refhandle().items() if len(indexes) > 1}
-        for tag, indexes in to_merge.items():
-            top_index = next(i for i in indexes if self._all_nodes[i].handle is not None)
-            top_node = self._all_nodes[top_index]
-            for i in sorted(indexes):
-                if i is not top_index:
-                    top_node.join(self._all_nodes[i])
-                    self._all_nodes[i] = None
-        self._all_nodes = {k: v for k, v in self._all_nodes.items() if v is not None}
+    def merge_refs(self):
+        ref_indexes = self._node_indexes_by_ref()
+        handle_indexes = self._node_indexes_by_handle()
+        for r, indexes in ref_indexes.items():
+            if r in handle_indexes.keys():
+                assert len(handle_indexes[r]) == 1
+                parent = self._all_nodes[handle_indexes[r][0]]
+                for i in indexes:
+                    if i in self._all_nodes.keys() and self._all_nodes[i] != None:
+                        child = self._all_nodes.pop(i)
+                        child.ref = None
+                        parent.join(child)
         return
 
+    def merge_paths(self):
+        path_indexes = {p: l for p, l in self._node_indexes_by_path().items() if len(l) > 1}
+        for path, indexes in path_indexes.items():
+            parent = self._all_nodes[indexes[0]]
+            for i in indexes[1:]:
+                child = self._all_nodes.pop(i)
+                parent.join(child)
+        return
 
+    def node_paths(self) -> list:
+        return list(set(self._node_indexes_by_path().keys()))
 
+    def merge(self):
+        self.merge_refs()
+        self.merge_paths()

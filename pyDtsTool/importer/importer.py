@@ -1,5 +1,5 @@
 ###################################################
-#                    PyDeviceTree                 #
+#                    pyDtsTool                 #
 #           Copyright 2021, Altium, Inc.          #
 #  Author: Keith Lee                              #
 #  E-Mail: keith.lee@altium.com                   #
@@ -7,7 +7,7 @@
 import os
 import typing
 from ..common import make_sig_tuple
-from dtsgen.device_tree import DeviceTree
+from pyDtsTool.device_tree import DeviceTree
 from .parsing import (merge_dict,
                       gcc_match,
                       node_match,
@@ -15,6 +15,7 @@ from .parsing import (merge_dict,
                       remove_comments,
                       collect_subnodes,
                       parse_property)
+import re
 
 
 class DtImporter(object):
@@ -49,7 +50,6 @@ class DtImporter(object):
                 if groups.group('dtc') not in ['delete-node', 'delete-property']:
                     self.dt.dtc_special[groups.group('dtc')] = groups.group('tail').strip()
 
-
     def extract_nodes(self):
         data = self._data.copy()
         i = 0
@@ -64,6 +64,8 @@ class DtImporter(object):
                         data[i] = md['extra']
                     else:
                         i += 1
+                    if md['sig'] == '' and re.match(r'\s*\/\s*\{', line):
+                        md['sig'] = '/'
                     if md['sig'] not in self.nodestrs.keys():
                         self.nodestrs[md['sig']] = {}
                     data, nodestrs = collect_subnodes(data[i:])

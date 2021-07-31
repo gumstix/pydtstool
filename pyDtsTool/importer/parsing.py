@@ -1,5 +1,5 @@
 ###################################################
-#                    PyDeviceTree                 #
+#                    pyDtsTool                 #
 #           Copyright 2021, Altium, Inc.          #
 #  Author: Keith Lee                              #
 #  E-Mail: keith.lee@altium.com                   #
@@ -13,7 +13,7 @@ gcc_match = re.compile(r'(?=\s*)((?P<inc>#include[ \t]*)([\"<])|'
                        r'(?P<def>#define))'
                        r'(\s*(?P<val>[^\v\"]*))')
 
-node_match = re.compile(r'(((?P<sig>[^\s][&/]?[\w\-_: \t@,]*)[^&]{)|'
+node_match = re.compile(r'(((?P<sig>(?=\s)?[&\/]?[\w\-_: \t@,]*)[^&]{)|'
                         r'(?P<end>};))'
                         r'(?P<extra>[^\v]*)?')
 
@@ -95,7 +95,7 @@ def collect_subnodes(data: typing.List[str]):
     i = 0
     datalen = len(data)
     while len(data) > 0 and i < datalen:
-        line = data[i]
+        line = data[i].strip()
         m = node_match.search(line)
         if m is not None:
             md = {name: value for name, value in m.groupdict().items() if value is not None}
@@ -105,7 +105,8 @@ def collect_subnodes(data: typing.List[str]):
                 else:
                     i += 1
                 try:
-                    data, subnode_lines[md['sig']] = collect_subnodes(data[i:])
+                    data, new_subnode = collect_subnodes(data[i:])
+                    subnode_lines[md['sig']] = merge_dict(subnode_lines.get(md['sig'], {}), new_subnode)
                 except TypeError as e:
                     print(e)
                     raise e
@@ -116,6 +117,7 @@ def collect_subnodes(data: typing.List[str]):
         else:
             node_lines.append(line)
             i += 1
+    return [], {'self': node_lines, 'subnodes': subnode_lines}
 
 
 def parse_property(prop_val: str):
@@ -152,8 +154,6 @@ def parse_property(prop_val: str):
         else:
             ret_val = gd.get('macro', None)
     return ret_val
-
-
 
 
 def merge_dict(d1, d2):

@@ -1,35 +1,51 @@
 ###################################################
-#                    PyDeviceTree                 #
+#                    pyDtsTool                    #
 #           Copyright 2021, Altium, Inc.          #
 #  Author: Keith Lee                              #
 #  E-Mail: keith.lee@altium.com                   #
 ###################################################
 import typing
+import abc
 
 
 def tuple_to_string(tup: typing.Tuple):
-    # string = ' '
-    # for t in tup:
-    #     string += '{} '.format(t)
+    """
+Standardized assembly of tuple strings for DTS files
+    :param tup: typing.Tuple
+    :return: str
+    """
     string = ' '.join(tup)
     return string
 
-class BaseNodeProperty(object):
+
+class NodeProperty(metaclass=abc.ABCMeta):
     property_name: str
     soft_tabs = True
     tab_size = 4
 
-    def __init__(self, name):
+    def __init__(self, name: str):
+        """
+Node property base class constructor
+        :param name: str
+        """
         self.property_name = name
+        self.value = None
 
+    @abc.abstractmethod
     def __str__(self):
         raise NotImplementedError('Base node not printable')
 
+    @abc.abstractmethod
     def type_match(self, value):
         raise NotImplementedError('Base node has no type')
 
+    @abc.abstractmethod
     def _get(self):
         raise NotImplementedError('No getter for Base property')
+
+    @property
+    def classname(self):
+        return self.__class__.__name__
 
     @property
     def tab(self):
@@ -38,11 +54,12 @@ class BaseNodeProperty(object):
         else:
             return '\t'
 
+    @abc.abstractmethod
     def print(self, indent):
         raise NotImplementedError
 
 
-class BoolNodeProperty(BaseNodeProperty):
+class BoolNodeProperty(NodeProperty):
     def __str__(self):
         return self.property_name + ';'
 
@@ -57,8 +74,12 @@ class BoolNodeProperty(BaseNodeProperty):
             return True
         return False
 
+    @property
+    def property_value(self):
+        return True
 
-class PairNodePorperty(BaseNodeProperty):
+
+class PairNodePorperty(NodeProperty):
     property_value: typing.Any
 
     def __init__(self, name, value):
@@ -104,7 +125,7 @@ class TupleNodeProperty(PairNodePorperty):
         return '{} = <{}>;'.format(self.property_name, tuple_to_string(self.property_value))
 
 
-class ListNodeProperty(BaseNodeProperty):
+class ListNodeProperty(NodeProperty):
     property_value: typing.List[typing.Any]
 
     def __init__(self, name, value):
@@ -178,7 +199,14 @@ class StrListNodeProperty(ListNodeProperty):
         return ret_str
 
 
-def new_node_property(name, value=None, default_type=bool) -> BaseNodeProperty:
+def new_node_property(name, value=None, default_type=bool) -> NodeProperty:
+    """
+Node property factory:  Determines NodeProperty subclass based on assigned value.
+    :param name: str
+    :param value: typing.Any
+    :param default_type: type
+    :return: NodeProperty
+    """
     if value is not None:
         valtype = str(type(value))
     else:
