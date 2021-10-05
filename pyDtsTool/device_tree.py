@@ -174,5 +174,5 @@ class DeviceTree(object):
         return list(set(self._node_indexes_by_path().keys()))
 
     def merge(self):
-        self.merge_refs()
         self.merge_paths()
+        self.merge_refs()

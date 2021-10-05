@@ -1,5 +1,5 @@
 from . import DeviceTree, NodeProperty, Node
-from pyDtsTool.common import sig_tuple
+from pyDtsTool.common import sig_tuple, tuple_representer
 import yaml
 
 
@@ -52,7 +52,7 @@ class Comparator(object):
             for n in node2.children:
                 n2 = next((c for c in node.children if c.pathname == n.pathname), None)
                 if n2 is None:
-                    diff['nodes'][n.nodename] = {1: '*missing', 2: '*present'}
+                    diff['nodes'][n.pathname] = {1: '*missing', 2: '*present'}
             if diff['nodes'] == {}:
                 del diff['nodes']
         return diff
@@ -66,13 +66,13 @@ class Comparator(object):
         for prop in props1:
             prop2 = next((p for p in props2 if p.property_name == prop.property_name), None)
             if prop2 is None:
-                self.diff['root'][prop.property_name] = {1: prop.property_value, 2: None}
+                self.diff['root'][prop.property_name] = {1: prop.property_value, 2: '*missing'}
             elif prop.property_value != prop2.property_value:
                 self.diff['root'][prop.property_name] = {1: prop.property_value, 2: prop2.property_value}
         for prop2 in props2:
             prop = next((p for p in props1 if p.property_name == prop2.property_name), None)
             if prop is None:
-                self.diff['root'][prop.property_name] = {1: '*missing', 2: prop2.property_value}
+                self.diff['root'][prop2.property_name] = {1: '*missing', 2: prop2.property_value}
         self.diff['root']['nodes'] = {}
         for node in root_d1.children:
             node2 = next((n for n in root_d2.children if n.pathname == node.pathname),
@@ -84,7 +84,7 @@ class Comparator(object):
                 if ndiff not in [{}, None]:
                     self.diff['root']['nodes'][node.pathname] = ndiff
         for node2 in root_d2.children:
-            node = next((n for n in root_d1.children if n.nodename == node2.nodename), None)
+            node = next((n for n in root_d1.children if n.pathname == node2.pathname), None)
             if node is None:
                 self.diff['root']['nodes'][node2.pathname] = {1: '*missing', 2: '*present'}
         self.diff['ref_nodes'] = {}
@@ -98,21 +98,34 @@ class Comparator(object):
                     self.diff['ref_nodes'][ref] = ndiff
         for ref in [r for r in self.dt2.nodes_by_ref.keys() if r not in self.dt1.nodes_by_ref.keys()]:
             self.diff['ref_nodes'][ref] = {1: '*missing', 2: '*present'}
+        self._cleanup_diff()
+
+    def _cleanup_diff(self):
+        if 'nodes' in self.diff['root'].keys() and len(self.diff['root']['nodes']) == 0:
+            del self.diff['root']['nodes']
+        if len(self.diff['root'].keys()) == 0:
+            del self.diff['root']
+        if len(self.diff['ref_nodes'].keys()) == 0:
+            del self.diff['ref_nodes']
 
     def _props_to_str(self):
         for key, val in self.diff.items():
             if isinstance(val, dict):
-                self.diff[key] =_g_tuples_to_str(val)
-            elif isinstance(NodeProperty):
+                self.diff[key] = _g_tuples_to_str(val)
+            elif isinstance(val, NodeProperty):
                 self.diff[key] = str(val)
 
     def print_output(self, filename: str=None):
+        yaml.add_representer(tuple, tuple_representer)
         if self.diff is None:
             self.get_diff()
         self._props_to_str()
         out = None
-        if filename is not None:
+        if filename is not None and len(self.diff.keys()) > 1:
             with open(filename, 'w+') as out:
                 yaml.dump(self.diff, out, yaml.Dumper)
         else:
+            print('The following device trees are identical:\n'
+                  '-----------------------------------------\n')
             print(yaml.dump(self.diff))
+

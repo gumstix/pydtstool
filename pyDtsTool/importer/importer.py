@@ -104,6 +104,13 @@ class DtImporter(object):
                     elif gd.get('dtc', None) is not None and gd['dtc'] in node.dtc.keys():
                         node.dtc[gd['dtc']].append(gd['tail'])
                 ag_line = ''
+            else:
+                ag_line += ' '
+        target = next((t for prop, t in node.property_index.items() if prop in ['target', 'target-path']), None)
+        if target is not None:
+            node.nodename = 'fragment_{}'.format(target.first())
+            node.reg = None
+            node.unset_property('reg')
         for sig, sub_lines in lines.get('subnodes', {}).items():
             sigtup = make_sig_tuple(sig)
             child = None

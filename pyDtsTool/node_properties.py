@@ -58,6 +58,10 @@ Node property base class constructor
     def print(self, indent):
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def first(self):
+        raise NotImplementedError
+
 
 class BoolNodeProperty(NodeProperty):
     def __str__(self):
@@ -78,6 +82,9 @@ class BoolNodeProperty(NodeProperty):
     def property_value(self):
         return True
 
+    def first(self):
+        return self.property_value
+
 
 class PairNodePorperty(NodeProperty):
     property_value: typing.Any
@@ -97,6 +104,9 @@ class PairNodePorperty(NodeProperty):
 
     def type_match(self, value) -> bool:
         return isinstance(value, type(self.property_value))
+
+    def first(self):
+        return self.property_value
 
 
 class StrNodeProperty(PairNodePorperty):
@@ -124,6 +134,9 @@ class TupleNodeProperty(PairNodePorperty):
     def __str__(self):
         return '{} = <{}>;'.format(self.property_name, tuple_to_string(self.property_value))
 
+    def first(self):
+        return next(p for p in self.property_value)
+
 
 class ListNodeProperty(NodeProperty):
     property_value: typing.List[typing.Any]
@@ -147,6 +160,9 @@ class ListNodeProperty(NodeProperty):
             if len(value) > 0 and isinstance(value[0], type(self.property_value[0])):
                 return True
         return False
+
+    def first(self):
+        return self.property_value[0]
 
 
 class TupleListNodeProperty(ListNodeProperty):

@@ -1,5 +1,5 @@
 ###################################################
-#                    pyDtsTool                 #
+#                    pyDtsTool                    #
 #           Copyright 2021, Altium, Inc.          #
 #  Author: Keith Lee                              #
 #  E-Mail: keith.lee@altium.com                   #
@@ -8,6 +8,7 @@ import os
 import yaml
 from pyDtsTool import DeviceTree, Node
 from pyDtsTool.node_properties import *
+from pyDtsTool.common import tuple_representer
 
 
 class Dictifier(object):
@@ -46,6 +47,7 @@ class Dictifier(object):
         return data
 
     def to_yaml(self, filename=None):
+        yaml.add_representer(tuple, tuple_representer)
         if filename is None:
             if self.yaml_name in [None, '.yaml']:
                 self.yaml_name = 'exported.yaml'

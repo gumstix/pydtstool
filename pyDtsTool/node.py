@@ -6,7 +6,7 @@
 ###################################################
 from typing import Union, List, Dict, Any
 
-from .node_properties import new_node_property, NodeProperty, BoolNodeProperty
+from .node_properties import *
 
 
 class NodeSignatureError(Exception):
