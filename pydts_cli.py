@@ -1,4 +1,4 @@
-#!/usr/bin/python3.7
+#!/usr/bin/python3
 
 import argparse
 from sys import argv
@@ -100,11 +100,6 @@ def interactive():
             namespace.append('-m')
     print('Running:  ' + ' '.join([__file__] + namespace))
     return namespace
-
-
-
-
-
 
 
 def main():
