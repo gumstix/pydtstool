@@ -4,6 +4,7 @@
 #  Author: Keith Lee                              #
 #  E-Mail: keith.lee@altium.com                   #
 ###################################################
+
 from typing import Union, List, Dict, Any
 
 from .node_properties import *
@@ -32,9 +33,9 @@ class BaseNode(object):
             return '\t'
 
     @staticmethod
-    def _validate_signature(nodename=None,
-                            handles=[],
-                            ref=None):
+    def _validate_signature(nodename: Union[str, None]=None,
+                            handles: List=[],
+                            ref: Union[str, None]=None):
         if nodename == ref and ref is None and len(handles) == 0:
             raise NodeSignatureError('No signature provided')
         if nodename is not None and ref is not None:
@@ -54,11 +55,12 @@ class BaseNode(object):
 
 class Node(BaseNode):
     def __init__(self,
-                 parent=None,
-                 nodename=None,
-                 handles=[],
-                 ref=None,
-                 reg=None):
+                 parent: Union[BaseNode, None]=None,
+                 nodename: Union[str, None]=None,
+                 handles: List=[],
+                 ref: Union[str, None]=None,
+                 reg: Union[str, None]=None):
+        """Basic DT node."""
         self.handles = []
         self.ref = None
         self._properties = []
@@ -66,11 +68,9 @@ class Node(BaseNode):
         self.reg = None
         self.dtc = {}
         self.children = []
-        if handles != None:
+        if handles is not None:
             if not isinstance(handles, list):
                 handles = [handles]
-        else:
-            handles = []
         self._validate_signature(nodename, handles, ref)
         if parent is not None and not isinstance(parent, Node):
             raise TypeError('Bad parent: {}'.format(type(parent)))
@@ -90,7 +90,8 @@ class Node(BaseNode):
             parent.children.append(self)
         self.dtc = {'include': [], 'delete-node': [], 'delete-property': []}
 
-    def set_parent(self, parent):
+    def set_parent(self, parent: BaseNode):
+        """Removes node from its current parent and attaches it to the new one, correcting the parents' child lists"""
         if self.parent is not None:
             self.parent.children.remove(self)
         self.parent = parent
@@ -157,7 +158,8 @@ class Node(BaseNode):
         path = path.replace(' ', '')
         return path
 
-    def set_property(self, name, value=None):
+    def set_property(self, name: str, value: Any=None):
+        """Add or modify node property as a NodeProperty object"""
         if name not in self.property_index.keys():
             self._properties.append(new_node_property(name, value))
         else:
@@ -172,12 +174,14 @@ class Node(BaseNode):
                 self._properties.remove(p)
                 self._properties.append(new_node_property(name, value))
 
-    def unset_property(self, name):
+    def unset_property(self, name: str):
+        """Remove (if exists) property by name"""
         p = self.property_index.get(name, None)
         if p is not None:
             self._properties.remove(p)
 
     def extend_property_list(self, name: str, value_list: list):
+        """Concatenate a list onto a ListProperty or convert a non-list into a list and concatenate"""
         if name not in self.property_index.keys():
             self._properties.append(new_node_property(name, value_list))
         elif self.property_index[name].type_match(value_list):
@@ -192,6 +196,7 @@ class Node(BaseNode):
         return self.print()
 
     def print(self, indent=0):
+        """Print Node data as DTS-formatted text *called by overridden __str__() method*"""
         nodestr = '\n'
         for i in self.dtc['include']:
             nodestr += (self.tab * indent) + '/include/ "{}"\n'.format(i)
@@ -211,7 +216,8 @@ class Node(BaseNode):
         nodestr += (self.tab * indent) + '};'
         return nodestr
 
-    def join(self, next_node):
+    def join(self, next_node: BaseNode):
+        """Joins node with ``next_node``, assuming that it appears in the DT after ``self``"""
         if len(next_node.handles) > 0:
             for h in next_node.handles:
                 if h not in self.handles:

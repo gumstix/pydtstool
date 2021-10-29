@@ -4,13 +4,14 @@
 #  Author: Keith Lee                              #
 #  E-Mail: keith.lee@altium.com                   #
 ###################################################
-import typing
+
+from typing import Union, List, Dict, Any, AnyStr, Tuple, Iterable
 import abc
 
 
-def tuple_to_string(tup: typing.Tuple):
-    """
-Standardized assembly of tuple strings for DTS files
+def tuple_to_string(tup: Tuple) -> str:
+    """Standardized assembly of tuple strings for DTS files
+
     :param tup: typing.Tuple
     :return: str
     """
@@ -20,12 +21,12 @@ Standardized assembly of tuple strings for DTS files
 
 class NodeProperty(metaclass=abc.ABCMeta):
     property_name: str
-    soft_tabs = True
-    tab_size = 4
+    soft_tabs: bool= True
+    tab_size: int= 4
 
     def __init__(self, name: str):
-        """
-Node property base class constructor
+        """Node property base class constructor
+        
         :param name: str
         """
         self.property_name = name
@@ -33,11 +34,11 @@ Node property base class constructor
 
     @abc.abstractmethod
     def __str__(self):
-        raise NotImplementedError('Base node not printable')
+        raise NotImplementedError('Base property not printable')
 
     @abc.abstractmethod
     def type_match(self, value):
-        raise NotImplementedError('Base node has no type')
+        raise NotImplementedError('Base property has no type')
 
     @abc.abstractmethod
     def _get(self):
@@ -48,14 +49,14 @@ Node property base class constructor
         return self.__class__.__name__
 
     @property
-    def tab(self):
+    def tab(self) -> str:
         if self.soft_tabs:
             return ' ' * self.tab_size
         else:
             return '\t'
 
     @abc.abstractmethod
-    def print(self, indent):
+    def print(self, indent: int):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -64,35 +65,36 @@ Node property base class constructor
 
 
 class BoolNodeProperty(NodeProperty):
-    def __str__(self):
+    def __str__(self) -> str:
         return self.property_name + ';'
 
-    def print(self, indent=0):
+    def print(self, indent: int=0) -> str:
         return (self.tab * indent) + self.property_name + ';'
 
     def _get(self):
         return self.property_name, True
 
-    def type_match(self, value):
+    def type_match(self, value: Any) -> bool:
         if isinstance(value, bool):
             return True
         return False
 
     @property
-    def property_value(self):
+    def property_value(self) -> bool:
         return True
 
-    def first(self):
+    def first(self) -> bool:
         return self.property_value
 
 
-class PairNodePorperty(NodeProperty):
-    property_value: typing.Any
+class PairNodePorperty(NodeProperty, metaclass=abc.ABCMeta):
+    property_value: Any
 
-    def __init__(self, name, value):
+    def __init__(self, name: str, value: Any):
         super(PairNodePorperty, self).__init__(name)
         self.property_value = value
 
+    @abc.abstractmethod
     def __str__(self):
         raise NotImplementedError('Non-type property')
 
@@ -105,12 +107,12 @@ class PairNodePorperty(NodeProperty):
     def type_match(self, value) -> bool:
         return isinstance(value, type(self.property_value))
 
-    def first(self):
+    def first(self)-> Any:
         return self.property_value
 
 
 class StrNodeProperty(PairNodePorperty):
-    property_value: typing.AnyStr
+    property_value: AnyStr
 
     def __str__(self):
         return '{} = "{}";'.format(self.property_name,
@@ -125,7 +127,7 @@ class IntNodeProperty(PairNodePorperty):
 
 
 class TupleNodeProperty(PairNodePorperty):
-    property_value: typing.Tuple
+    property_value: Tuple
 
     def __init__(self, name, value):
         super(TupleNodeProperty, self).__init__(name, value)
@@ -139,7 +141,7 @@ class TupleNodeProperty(PairNodePorperty):
 
 
 class ListNodeProperty(NodeProperty):
-    property_value: typing.List[typing.Any]
+    property_value: List[Any]
 
     def __init__(self, name, value):
         super(ListNodeProperty, self).__init__(name)
@@ -153,7 +155,7 @@ class ListNodeProperty(NodeProperty):
         return self.property_name, self.property_value
 
     def print(self, indent=0):
-        return self.__str__()
+        return (self.tab * indent) + self.__str__()
 
     def type_match(self, value):
         if isinstance(value, list):
@@ -166,7 +168,7 @@ class ListNodeProperty(NodeProperty):
 
 
 class TupleListNodeProperty(ListNodeProperty):
-    property_value: typing.List[typing.Tuple]
+    property_value: List[Tuple]
 
     def __str__(self):
         tuple_strs = [tuple_to_string(t) for t in self.property_value]
@@ -182,9 +184,8 @@ class TupleListNodeProperty(ListNodeProperty):
 
 
 class IntListNodeProperty(ListNodeProperty):
-    property_value: typing.List[int]
+    property_value: Iterable[int]
 
-    # noinspection PyTypeChecker
     def __str__(self):
         return '{} = <{}>;'.format(self.property_name, ' '.join(self.property_value))
 
@@ -201,7 +202,7 @@ class IntListNodeProperty(ListNodeProperty):
 
 
 class StrListNodeProperty(ListNodeProperty):
-    property_value: typing.List[typing.AnyStr]
+    property_value: List[AnyStr]
 
     def __str__(self):
         return '{} = "{}";'.format(self.property_name, '", "'.join(self.property_value))
@@ -215,14 +216,8 @@ class StrListNodeProperty(ListNodeProperty):
         return ret_str
 
 
-def new_node_property(name, value=None, default_type=bool) -> NodeProperty:
-    """
-Node property factory:  Determines NodeProperty subclass based on assigned value.
-    :param name: str
-    :param value: typing.Any
-    :param default_type: type
-    :return: NodeProperty
-    """
+def new_node_property(name: str, value: Any=None, default_type: type=bool) -> NodeProperty:
+    """Node property factory:  Determines NodeProperty subclass based on assigned value."""
     if value is not None:
         valtype = str(type(value))
     else:

@@ -1,5 +1,5 @@
 ###################################################
-#                    pyDtsTool                 #
+#                    pyDtsTool                    #
 #           Copyright 2021, Altium, Inc.          #
 #  Author: Keith Lee                              #
 #  E-Mail: keith.lee@altium.com                   #
@@ -11,6 +11,7 @@ from ..common import make_sig_tuple, sig_tuple
 
 
 class UnDictifier(object):
+    """Converts dictified dt into DeviceTree object"""
     def __init__(self, dt: DeviceTree, dt_dict: dict):
         self.data = dt_dict
         self.dt = dt

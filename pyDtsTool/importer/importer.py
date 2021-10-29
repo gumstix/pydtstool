@@ -1,9 +1,10 @@
 ###################################################
-#                    pyDtsTool                 #
+#                    pyDtsTool                    #
 #           Copyright 2021, Altium, Inc.          #
 #  Author: Keith Lee                              #
 #  E-Mail: keith.lee@altium.com                   #
 ###################################################
+
 import os
 import typing
 from ..common import make_sig_tuple

@@ -1,3 +1,10 @@
+###################################################
+#                    pyDtsTool                    #
+#           Copyright 2021, Altium, Inc.          #
+#  Author: Keith Lee                              #
+#  E-Mail: keith.lee@altium.com                   #
+###################################################
+
 from . import DeviceTree, NodeProperty, Node
 from pyDtsTool.common import sig_tuple, tuple_representer
 import yaml
@@ -14,11 +21,13 @@ def _g_tuples_to_str(data: dict):
 
 class Comparator(object):
     def __init__(self, dt1: DeviceTree, dt2: DeviceTree):
+        """Object comparing two device tree sources, returning a YAML with details of what is different or missing"""
         self.dt1 = dt1
         self.dt2 = dt2
         self.diff = None
 
     def missing_nodes(self) -> tuple:
+        """Searches for unpaired paths bidirectionally"""
         d1_paths = self.dt1.node_paths()
         d2_paths = self.dt2.node_paths()
         d1_missing = [p for p in d1_paths if p not in d2_paths]
@@ -58,6 +67,7 @@ class Comparator(object):
         return diff
 
     def get_diff(self):
+        """Recursive comparison of two DeviceTree objects"""
         root_d1 = self.dt1.get_node_from_tuple(sig_tuple('/', None, None, None))
         root_d2 = self.dt2.get_node_from_tuple(sig_tuple('/', None, None, None))
         self.diff = {'filenames': {1: self.dt1.filename, 2: self.dt2.filename}, 'root': {}}
@@ -116,16 +126,21 @@ class Comparator(object):
                 self.diff[key] = str(val)
 
     def print_output(self, filename: str=None):
+        """YAML representation of DT differences"""
         yaml.add_representer(tuple, tuple_representer)
         if self.diff is None:
             self.get_diff()
         self._props_to_str()
         out = None
-        if filename is not None and len(self.diff.keys()) > 1:
-            with open(filename, 'w+') as out:
-                yaml.dump(self.diff, out, yaml.Dumper)
+        if len(self.diff.keys()) > 1:
+            if filename is not None:
+                with open(filename, 'w+') as out:
+                    yaml.dump(self.diff, out, yaml.Dumper)
+            else:
+                print(yaml.dump(self.diff))
         else:
             print('The following device trees are identical:\n'
                   '-----------------------------------------\n')
             print(yaml.dump(self.diff))
+            
 

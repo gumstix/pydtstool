@@ -1,3 +1,10 @@
+###################################################
+#                    pyDtsTool                    #
+#           Copyright 2021, Altium, Inc.          #
+#  Author: Keith Lee                              #
+#  E-Mail: keith.lee@altium.com                   #
+###################################################
+
 from pyvis.network import Network
 import networkx as nx
 from networkx.drawing.nx_agraph import write_dot

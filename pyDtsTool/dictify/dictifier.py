@@ -13,6 +13,7 @@ from pyDtsTool.common import tuple_representer
 
 class Dictifier(object):
     def __init__(self, dt: DeviceTree):
+        """Converts DeviceTree into dictionary and can export to YAML format"""
         self.dt = dt
         self.data = {}
         self.yaml_name = os.path.splitext(os.path.split(dt.filename)[-1])[0] + '.yaml'

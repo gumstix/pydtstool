@@ -1,18 +1,19 @@
 ###################################################
-#                    pyDtsTool                 #
+#                    pyDtsTool                    #
 #           Copyright 2021, Altium, Inc.          #
 #  Author: Keith Lee                              #
 #  E-Mail: keith.lee@altium.com                   #
 ###################################################
-from typing import Dict, List, Union
+
+from typing import Dict, List, Union, Tuple
 from collections import defaultdict
 
 from pyDtsTool.common import sig_tuple
 from .node import Node
 
 default_header = ['/*********************************************/',
-                  '/* pyDtsTool by Altium                    */',
-                  '/* Copyright (c) 2020 Altium, Inc            */',
+                  '/* pyDtsTool by Altium                       */',
+                  '/* Copyright (c) 2021 Altium, Inc            */',
                   '/* Contact: Keith Lee <keith.lee@altium.com> */',
                   '/*********************************************/',
                   '']
@@ -20,12 +21,14 @@ default_header = ['/*********************************************/',
 
 class DeviceTree(object):
     def __init__(self):
-            self.filename: str = None
-            self.dts_version: int = 1
-            self.gcc_include: List[str] = []
-            self.gcc_define: Dict[str, Union[bool, str, int]] = {}
-            self.dtc_special: Dict[str, str] = {}
-            self._all_nodes: Dict[int, Node] = {0: Node(nodename='/')}
+        """Container for all Node objects and any C-style precompile declarations, such as ``#include``
+        and ``#define``."""
+        self.filename: str = None
+        self.dts_version: int = 1
+        self.gcc_include: List[str] = []
+        self.gcc_define: Dict[str, Union[bool, str, int]] = {}
+        self.dtc_special: Dict[str, str] = {}
+        self._all_nodes: Dict[int, Node] = {0: Node(nodename='/')}
 
     def __str__(self):
         text = '\n'.join(default_header)
@@ -55,6 +58,11 @@ class DeviceTree(object):
         return text
 
     def copy(self):
+        """Produces a new instance of DeviceTree with the same data as ``self``
+
+        :return: Copy of ``self``
+        :rtype: DeviceTree
+        """
         new_dt = self.__class__()
         new_dt.filename = self.filename
         new_dt.dts_version = self.dts_version
@@ -66,8 +74,8 @@ class DeviceTree(object):
     @classmethod
     def new_devicetree(cls,
                        filename: str):
-        """
-        Verify filename and return new device tree object
+        """Verify filename and return new device tree object
+
         :param filename: str
         :return: DeviceTree
         """
@@ -79,10 +87,7 @@ class DeviceTree(object):
 
     @property
     def nodes_by_name(self) -> Dict[str, Node]:
-        """
-        Dictify all nodes that have root name and register
-        :return: Dict[str, Node]
-        """
+        """ Index of all root nodes by name and register"""
         nodes = {}
         for _, n in self._all_nodes.items():
             if n.nodename is not None:
@@ -94,6 +99,7 @@ class DeviceTree(object):
 
     @property
     def nodes_by_ref(self) -> Dict[str, Node]:
+        """Index of all nodes with reference tags in the devicetree"""
         nodes = {n.ref: n for _, n in self._all_nodes.items() if n.ref is not None}
         return nodes
 
@@ -120,6 +126,7 @@ class DeviceTree(object):
         return dict(nodes)
 
     def get_node_from_tuple(self, tup: sig_tuple) -> Union[Node, None]:
+        """Using data from a sigature tuple (nodename, reg, ref) locate a matching node in the tree"""
         node = None
         if tup.nodename is not None:
             candidates = [n for k, n in self.nodes_by_name.items() if k.startswith(tup.nodename)]
@@ -130,11 +137,12 @@ class DeviceTree(object):
         return node
 
     def new_node(self,
-                 parent=None,
-                 nodename=None,
-                 handles=[],
-                 ref=None,
-                 reg=None):
+                 parent: Union[Node, None]=None,
+                 nodename: Union[str, None]=None,
+                 handles: Union[list, str]=[],
+                 ref: str=None,
+                 reg: Union[str, int, None]=None)-> Tuple[int, Node]:
+        """Add a new node to the device tree"""
         if isinstance(handles, str):
             handles = handles.split(': ')
         new_node = Node(parent, nodename, handles, ref, reg)
@@ -142,12 +150,13 @@ class DeviceTree(object):
         return entry_number, new_node
 
     def add_node(self,
-                 node):
+                 node: Node) -> int:
         entry_number = max(self._all_nodes.keys()) + 1
         self._all_nodes[entry_number] = node
         return entry_number
 
     def merge_refs(self):
+        """Join Nodes by reference tag"""
         ref_indexes = self._node_indexes_by_ref()
         handle_indexes = self._node_indexes_by_handle()
         for r, indexes in ref_indexes.items():
@@ -159,20 +168,22 @@ class DeviceTree(object):
                         child = self._all_nodes.pop(i)
                         child.ref = None
                         parent.join(child)
-        return
 
     def merge_paths(self):
+        """Join Nodes by matching locations in structure.  For instance, when working with linked, uncompiled ``.dts.tmp``
+        file, there will often be multiple root nodes with common subnodes.  These have the same path and should be merged"""
         path_indexes = {p: l for p, l in self._node_indexes_by_path().items() if len(l) > 1}
         for path, indexes in path_indexes.items():
             parent = self._all_nodes[indexes[0]]
             for i in indexes[1:]:
                 child = self._all_nodes.pop(i)
                 parent.join(child)
-        return
 
     def node_paths(self) -> list:
+        """Unique set of paths within the devicetree structure"""
         return list(set(self._node_indexes_by_path().keys()))
 
     def merge(self):
+        """Macro combining both path and ref merging steps"""
         self.merge_paths()
         self.merge_refs()
